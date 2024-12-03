@@ -11,7 +11,7 @@ This module helps in debugging and monitoring the system's behavior and performa
 import os
 
 
-def init_tracing():
+def init_tracing(sql_engine):
     """
     Initialize tracing and observability tools based on environment variables.
 
@@ -23,6 +23,8 @@ def init_tracing():
         print("Initializing Logfire tracing")
         import logfire
         logfire.configure()
+        logfire.instrument_sqlalchemy(engine=sql_engine.engine)
+        logfire.instrument_openai(sql_engine.client)
 
     if os.getenv("TRACE_PHOENIX", False):
         print("Initializing Phoenix tracing")

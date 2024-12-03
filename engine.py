@@ -1,5 +1,4 @@
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
 import os
 from typing import Dict
 import json
@@ -28,7 +27,6 @@ class TextToSQLEngine:
         # Initialize the SQLite database connection
         db_path = os.getenv("DATABASE_PATH", "sqlite:///data/windforest.db")
         self.engine = create_engine(db_path)
-        self.Session = sessionmaker(bind=self.engine)
 
         # Define the OpenAI model to use
         self.model = os.getenv("OPENAI_MODEL", "gpt-4")  # Updated to 'gpt-4'
@@ -322,15 +320,13 @@ class TextToSQLEngine:
 
             # Execute the SQL query with error handling
             try:
-                session = self.Session()
-                result = session.execute(text(sql_query))
-                rows = result.fetchmany(5)
-                columns = result.keys()
+                with self.engine.connect() as connection:
+                    result = connection.execute(text(sql_query))
+                    rows = result.fetchmany(5)
+                    columns = result.keys()
 
                 # Format results as a list of dictionaries
                 results_table = [dict(zip(columns, row)) for row in rows]
-
-                session.close()
 
                 return {
                     "query": sql_query,

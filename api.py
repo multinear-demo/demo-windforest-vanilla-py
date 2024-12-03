@@ -24,7 +24,6 @@ from formatters import wrap_sql, format_results_as_markdown_table
 
 
 load_dotenv()
-init_tracing()
 
 app = FastAPI(title="Text-to-SQL Chat Application")
 
@@ -39,6 +38,7 @@ app.add_middleware(
 
 # Initialize Text-to-SQL engine (singleton)
 sql_engine = TextToSQLEngine()
+init_tracing(sql_engine)
 
 # Initialize SessionManager (singleton)
 session_manager = SessionManager()

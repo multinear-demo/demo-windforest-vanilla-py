@@ -17,20 +17,20 @@ import numpy as np
 import time
 import functools
 
-# Initialize Faker
+# Initialize Faker for generating realistic fake data
 fake = Faker()
 
-# Set up logging
+# Configure logging to monitor the data generation process
 logging.basicConfig(
     level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-# Database setup
+# Database setup using SQLAlchemy's declarative base
 Base = declarative_base()
-engine = create_engine('sqlite:///data/windforest.db')
+engine = create_engine('sqlite:///data/windforest.db')  # SQLite database engine
 
 
-# Define models
+# Define the Customer model representing customers in the database
 class Customer(Base):
     __tablename__ = 'customers'
     id = Column(Integer, primary_key=True)
@@ -43,7 +43,7 @@ class Customer(Base):
     age = Column(Integer)
     gender = Column(String)
     income_level = Column(Float)
-    clv = Column(Float)
+    clv = Column(Float)  # Customer Lifetime Value
     account_creation_date = Column(Date)
     preferred_contact_method = Column(String)
     purchase_frequency = Column(String)
@@ -54,6 +54,7 @@ class Customer(Base):
     interactions = relationship("CustomerServiceInteraction", back_populates="customer")
 
 
+# Define the Employee model representing company employees
 class Employee(Base):
     __tablename__ = 'employees'
     id = Column(Integer, primary_key=True)
@@ -76,6 +77,7 @@ class Employee(Base):
     orders = relationship("Order", back_populates="employee")
 
 
+# Define the Supplier model representing product suppliers
 class Supplier(Base):
     __tablename__ = 'suppliers'
     id = Column(Integer, primary_key=True)
@@ -89,6 +91,7 @@ class Supplier(Base):
     books = relationship("Book", back_populates="supplier")
 
 
+# Define the Category model for book classifications
 class Category(Base):
     __tablename__ = 'categories'
     id = Column(Integer, primary_key=True)
@@ -103,6 +106,7 @@ class Category(Base):
     )
 
 
+# Define the Author model representing book authors
 class Author(Base):
     __tablename__ = 'authors'
     id = Column(Integer, primary_key=True)
@@ -110,12 +114,15 @@ class Author(Base):
     books = relationship("Book", secondary='book_authors', back_populates="authors")
 
 
+# Define the association table for the many-to-many relationship
+# between books and authors
 class BookAuthor(Base):
     __tablename__ = 'book_authors'
     book_id = Column(Integer, ForeignKey('books.id'), primary_key=True)
     author_id = Column(Integer, ForeignKey('authors.id'), primary_key=True)
 
 
+# Define the CustomerServiceInteraction model for support interactions
 class CustomerServiceInteraction(Base):
     __tablename__ = 'customer_service_interactions'
     id = Column(Integer, primary_key=True)
@@ -135,12 +142,15 @@ class CustomerServiceInteraction(Base):
     employee = relationship("Employee")
 
 
+# Define the association table for the many-to-many relationship between
+# books and categories
 class BookCategory(Base):
     __tablename__ = 'book_categories'
     book_id = Column(Integer, ForeignKey('books.id'), primary_key=True)
     category_id = Column(Integer, ForeignKey('categories.id'), primary_key=True)
 
 
+# Define the BookPriceHistory model to track historical pricing of books
 class BookPriceHistory(Base):
     __tablename__ = 'book_price_history'
     id = Column(Integer, primary_key=True)
@@ -152,6 +162,7 @@ class BookPriceHistory(Base):
     book = relationship("Book", back_populates="price_history")
 
 
+# Define the Book model representing products sold by the company
 class Book(Base):
     __tablename__ = 'books'
     id = Column(Integer, primary_key=True)
@@ -174,8 +185,11 @@ class Book(Base):
     price_history = relationship("BookPriceHistory", back_populates="book")
 
     def get_price_at_date(self, session, date=None):
-        """Get the effective price at a specific date, or current price
-        if date is None"""
+        """Retrieve the effective price of the book on a specific date.
+
+        If no date is provided, the current price is returned.
+        This method considers historical price changes.
+        """
         if date is None:
             date = datetime.now().date()
 
@@ -194,6 +208,7 @@ class Book(Base):
         return historical_price.price if historical_price else self.price
 
 
+# Define the Shipper model representing shipping companies
 class Shipper(Base):
     __tablename__ = 'shippers'
     id = Column(Integer, primary_key=True)
@@ -205,6 +220,7 @@ class Shipper(Base):
     orders = relationship("Order", back_populates="shipper")
 
 
+# Define the Order model representing customer orders
 class Order(Base):
     __tablename__ = 'orders'
     id = Column(Integer, primary_key=True)
@@ -225,6 +241,7 @@ class Order(Base):
     interactions = relationship("CustomerServiceInteraction", back_populates="order")
 
 
+# Define the OrderItem model representing individual items within an order
 class OrderItem(Base):
     __tablename__ = 'order_items'
     id = Column(Integer, primary_key=True)
@@ -236,8 +253,12 @@ class OrderItem(Base):
     book = relationship("Book", back_populates="order_items")
 
 
-# Create tables
+# Create all tables in the database based on the defined models
 Base.metadata.create_all(engine)
+
+# ---------------------
+# Data Generation Setup
+# ---------------------
 
 
 # Data generation functions
@@ -276,8 +297,9 @@ def generate_seasonal_date(start_date, end_date):
     return date
 
 
+# Define decorators to measure and log the duration of functions and simulation steps
 def measure_duration(func):
-    """Decorator to measure and log function duration."""
+    """Decorator to measure and log the duration of a function."""
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -296,7 +318,7 @@ def measure_duration(func):
 
 
 def measure_step(description):
-    """Decorator to measure and log duration of a simulation step."""
+    """Decorator to measure and log the duration of a simulation step."""
 
     def decorator(func):
         @functools.wraps(func)
@@ -317,12 +339,23 @@ def measure_step(description):
     return decorator
 
 
-# Add decorator to all generation functions
+# ---------------------
+# Data Generation Functions
+# ---------------------
+
+
 @measure_duration
 def generate_customers(session, n=1000):
+    """Generate a specified number of customer records with realistic
+       demographics and behaviors.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+        n (int): Number of customers to generate.
+    """
     logging.info(f"Generating {n} customers...")
 
-    # Existing distributions
+    # Define customer segments with corresponding weights
     segments = ['Retail', 'Wholesale', 'VIP']
     segment_weights = [0.7, 0.2, 0.1]  # 70% retail, 20% wholesale, 10% VIP
 
@@ -436,7 +469,8 @@ def generate_customers(session, n=1000):
         )
         income_level = base_income * income_multipliers[segment] * age_factor
 
-        # Calculate CLV based on frequency and average order value
+        # Calculate Customer Lifetime Value (CLV) based on frequency and
+        # average order value
         frequency_multiplier = {
             'frequent': 24,  # ~24 orders per year
             'regular': 12,  # ~12 orders per year
@@ -484,6 +518,13 @@ def generate_customers(session, n=1000):
 
 @measure_duration
 def generate_employees(session, n=50):
+    """Generate a specified number of employee records, establishing
+       an organizational hierarchy.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+        n (int): Number of employees to generate.
+    """
     logging.info(f"Generating {n} employees...")
 
     # Define organizational structure
@@ -655,6 +696,12 @@ def generate_employees(session, n=50):
 
 @measure_duration
 def generate_suppliers(session, n=100):
+    """Generate a specified number of supplier records with realistic profiles.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+        n (int): Number of suppliers to generate.
+    """
     logging.info(f"Generating {n} suppliers...")
 
     # More realistic location distribution
@@ -694,6 +741,12 @@ def generate_suppliers(session, n=100):
 
 @measure_duration
 def generate_categories(session, n=20):
+    """Generate a specified number of book categories with hierarchical relationships.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+        n (int): Number of categories to generate.
+    """
     logging.info(f"Generating {n} categories...")
 
     # Define main categories with subcategories
@@ -741,6 +794,12 @@ def generate_categories(session, n=20):
 
 @measure_duration
 def generate_authors(session, n=500):
+    """Generate a specified number of author records, some using pen names.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+        n (int): Number of authors to generate.
+    """
     logging.info(f"Generating {n} authors...")
 
     # Generate birth dates for realistic age distribution
@@ -776,6 +835,13 @@ def generate_authors(session, n=500):
 
 @measure_duration
 def generate_books(session, n=5000):
+    """Generate a specified number of book records with diverse attributes
+       and relationships.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+        n (int): Number of books to generate.
+    """
     logging.info(f"Generating {n} books...")
     suppliers = session.query(Supplier).all()
     categories = session.query(Category).all()
@@ -989,6 +1055,12 @@ def generate_books(session, n=5000):
 
 @measure_duration
 def generate_shippers(session, n=10):
+    """Generate a specified number of shipper records with performance metrics.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+        n (int): Number of shippers to generate.
+    """
     logging.info(f"Generating {n} shippers...")
 
     # Define service areas with market share weights
@@ -1043,6 +1115,13 @@ def generate_shippers(session, n=10):
 
 @measure_duration
 def generate_orders(session, n=10000):
+    """Generate a specified number of order records with seasonal patterns
+       and fraud detection.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+        n (int): Number of orders to generate.
+    """
     logging.info(f"Generating {n} orders...")
     customers = session.query(Customer).all()
     employees = session.query(Employee).all()
@@ -1122,6 +1201,13 @@ def generate_orders(session, n=10000):
 
 @measure_duration
 def generate_order_items(session, n=30000):
+    """Generate a specified number of order item records, considering
+       bundling and bulk purchases.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+        n (int): Number of order items to generate.
+    """
     logging.info(f"Generating {n} order items...")
 
     # Fetch all required data upfront
@@ -1233,6 +1319,13 @@ def generate_order_items(session, n=30000):
 
 @measure_duration
 def generate_customer_service_interactions(session, n=2000):
+    """Generate a specified number of customer service interaction records
+       with realistic scenarios.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+        n (int): Number of customer service interactions to generate.
+    """
     logging.info(f"Generating {n} customer service interactions...")
     customers = session.query(Customer).all()
     cs_employees = (
@@ -1440,7 +1533,16 @@ def generate_customer_service_interactions(session, n=2000):
 
 @measure_duration
 def generate_cross_functional_data(session):
-    """Generate additional cross-functional relationships and data points."""
+    """Generate additional cross-functional relationships and data points
+    to enhance data realism.
+
+    This includes updating category popularity based on sales, adjusting
+    CLV based on actual spending, and recalibrating supplier ratings
+    based on performance metrics.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+    """
     logging.info("Generating cross-functional data relationships...")
 
     # Get existing data
@@ -1524,8 +1626,14 @@ def generate_cross_functional_data(session):
 
 @measure_step("Simulating customer churn patterns")
 def simulate_customer_churn(session):
-    """Simulate customer churn patterns to create realistic patterns in the data."""
+    """Simulate customer churn patterns to create realistic patterns in the data.
 
+    Identifies customers inactive for extended periods and adjusts their CLV,
+    also records retention attempts.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+    """
     # Get existing data
     customers = session.query(Customer).all()
 
@@ -1557,8 +1665,14 @@ def simulate_customer_churn(session):
 @measure_step("Simulating inventory management scenarios")
 def simulate_inventory(session):
     """Simulate inventory management scenarios to create realistic patterns
-    in the data."""
+    in the data.
 
+    This includes simulating stockouts for popular items and
+    adjusting reorder points accordingly.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+    """
     # Get existing data
     books = session.query(Book).all()
     orders = session.query(Order).all()
@@ -1585,8 +1699,14 @@ def simulate_inventory(session):
 
 @measure_step("Simulating promotional impacts")
 def simulate_promotions(session):
-    """Simulate promotional impacts to create realistic patterns in the data."""
+    """Simulate promotional impacts to create realistic patterns in the data.
 
+    Adjusts discounts during defined promotion periods and annotates orders
+    with promotion details.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+    """
     # Get existing data
     orders = session.query(Order).all()
 
@@ -1631,8 +1751,13 @@ def simulate_promotions(session):
 
 @measure_step("Simulating fraud patterns")
 def simulate_fraud(session):
-    """Simulate fraud patterns to create realistic patterns in the data."""
+    """Simulate fraud patterns to create realistic patterns in the data.
 
+    Flags orders with suspicious patterns and annotates them for review.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+    """
     # Get existing data
     orders = session.query(Order).all()
 
@@ -1695,7 +1820,13 @@ def simulate_fraud(session):
 
 @measure_step("Simulating dynamic pricing")
 def simulate_pricing(session):
-    """Simulate dynamic pricing to create realistic patterns in the data."""
+    """Simulate dynamic pricing to create realistic patterns in the data.
+
+    Adjusts book prices based on demand and simulated competitive pressures.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+    """
 
     # Get existing data
     books = session.query(Book).all()
@@ -1724,7 +1855,12 @@ def simulate_pricing(session):
 
 @measure_duration
 def simulate_business_scenarios(session):
-    """Simulate various business scenarios to create realistic patterns in the data."""
+    """Simulate various business scenarios to enhance data realism, including
+       churn, inventory, promotions, fraud, and pricing.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+    """
     logging.info("Simulating business scenarios...")
 
     simulate_customer_churn(session)
@@ -1738,7 +1874,12 @@ def simulate_business_scenarios(session):
 
 @measure_duration
 def introduce_data_anomalies(session):
-    """Introduce realistic data anomalies and exceptions into the dataset."""
+    """Introduce realistic data anomalies and exceptions into the dataset to mimic
+       real-world inconsistencies.
+
+    Args:
+        session: SQLAlchemy session object for database interactions.
+    """
     logging.info("Introducing data anomalies and exceptions...")
 
     customers = session.query(Customer).all()
@@ -1849,6 +1990,28 @@ def introduce_data_anomalies(session):
 
 @measure_duration
 def generate_data():
+    """Main function to orchestrate the data generation process.
+
+    This function initializes the session and sequentially calls
+    all data generation functions, ensuring the database is populated
+    with a realistic and complex dataset suitable for AI Text-to-SQL testing.
+
+    Steps:
+        1. Generate customers
+        2. Generate employees
+        3. Generate suppliers
+        4. Generate categories
+        5. Generate authors
+        6. Generate books
+        7. Generate shippers
+        8. Generate orders
+        9. Generate order items
+        10. Generate customer service interactions
+        11. Generate cross-functional data
+        12. Simulate business scenarios
+        13. Introduce data anomalies
+
+    """
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s │ %(message)s',
@@ -1880,6 +2043,10 @@ def generate_data():
     finally:
         session.close()
 
+
+# ---------------------
+# Main Execution
+# ---------------------
 
 if __name__ == "__main__":
     generate_data()

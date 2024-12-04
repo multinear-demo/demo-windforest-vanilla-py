@@ -13,4 +13,4 @@ __pycache__/
 
 # OS
 .DS_Store
-data/windforest.db
+data/windforest.db*

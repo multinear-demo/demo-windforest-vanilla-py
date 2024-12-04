@@ -57,7 +57,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-### Option 3: Using Python's built-in `venv`
+### Option 3: Using Python's built-in `venv` (Simplest)
 
 ```bash
 # Setup Environment
@@ -96,6 +96,16 @@ uv run --with jupyter jupyter lab notebook.ipynb
 pip install jupyter
 jupyter lab notebook.ipynb
 ```
+
+## Data Generation
+
+The data generation script creates a realistic and complex dataset inspired by the Northwind database.
+
+```bash
+python3 generate.py
+```
+
+More documentation available at [GENERATE.md](GENERATE.md).
 
 ## Architecture
 

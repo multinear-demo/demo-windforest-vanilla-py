@@ -6,6 +6,11 @@ project:
 tasks:
   - id: vip-customers-europe
     input: Show me the names and emails of all VIP customers in Europe
+    # expected SQL: 
+    #   SELECT name, email
+    #     FROM customers
+    #     WHERE segment = 'VIP' AND region = 'Europe'
+    #   LIMIT 5;    
     checklist:
       - |
         there are only the following people in the answer:
@@ -17,6 +22,13 @@ tasks:
 
   - id: top-3-best-selling-books
     input: What are the top 3 best-selling book titles based on quantity sold?
+    # expected SQL:
+    #   SELECT b.title, SUM(oi.quantity) AS total_quantity_sold
+    #     FROM order_items oi
+    #     JOIN books b ON oi.book_id = b.id
+    #   GROUP BY b.title
+    #   ORDER BY total_quantity_sold DESC
+    #   LIMIT 3;    
     checklist:
       - |
         there are only the following books in the answer, with appropriate quantities:

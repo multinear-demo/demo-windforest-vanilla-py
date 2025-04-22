@@ -1,0 +1,25 @@
+project:
+  name: Windforest
+  id: windforest
+  description: Multinear Windforest Demo
+
+tasks:
+  - id: vip-customers-europe
+    input: Show me the names and emails of all VIP customers in Europe
+    checklist:
+      - |
+        there are only the following people in the answer:
+        - Nina Garcia, campbellamy@example.net
+        - Jennifer Young, steven91@example.com
+        - Dr. Margaret Jimenez, zgamble@example.net
+        - Andrea Lopez, josehicks@example.net
+        - Valerie Holloway, uwashington@example.org
+
+  - id: top-3-best-selling-books
+    input: What are the top 3 best-selling book titles based on quantity sold?
+    checklist:
+      - |
+        there are only the following books in the answer, with appropriate quantities:
+        - Multi-tiered user-facing Graphical User Interface: 4,805
+        - Total holistic encoding: 4,752
+        - Universal fault-tolerant project: 4,632

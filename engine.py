@@ -29,7 +29,7 @@ class TextToSQLEngine:
         self.engine = create_engine(db_path)
 
         # Define the OpenAI model to use
-        self.model = os.getenv("OPENAI_MODEL", "gpt-4")  # Updated to 'gpt-4'
+        self.model = os.getenv("OPENAI_MODEL", "gpt-4o")
 
         # Load the database schema
         self.schema = self._load_schema()
